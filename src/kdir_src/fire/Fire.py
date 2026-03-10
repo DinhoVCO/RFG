@@ -5,7 +5,6 @@ from kdir_src.utils.inference import get_inference_results
 from tqdm import tqdm 
 import torch
 import numpy as np
-import torch
 import json
 import os
 import time
@@ -306,6 +305,8 @@ class Fire:
             anwers_input.append(answer)
         return {'doc_input':documents_input, 'query_input':queries_input, 'anwers_input':anwers_input}
 
+    
+
 
     def generate_openai_doc_and_save_prf(self, gen_model, path_input, path_to_save='../doc_gen/fire/openai/'):
         model ="bge_large"
@@ -342,6 +343,70 @@ class Fire:
                 }
                 f_write.write(json.dumps(entry, ensure_ascii=False) + '\n')
         print(f"Document generation complete. Results saved in: {output_filepath}")
+
+    def generate_and_save_prf_bge_large(self, path='../doc_gen/fire/', batch_size=32, top_k=5):
+        vectors =["contriever","contriever_ft","dpr","bge_large","gte_large","sparse_bm25"]
+        sentences, queries_ids, all_rel_docs = self.get_all_rel_docs(batch_size, top_k)
+        for j, rel_docs in enumerate(all_rel_docs):
+            os.makedirs(path+f'{vectors[j]}/', exist_ok=True)
+            output_filepath = os.path.join(path+f'{vectors[j]}/', f"generated_documents_{self.dataset_name}.jsonl")
+            if(vectors[j]=="bge_large"):
+                existing_query_ids = set()
+                if os.path.exists(output_filepath):
+                    with open(output_filepath, 'r', encoding='utf-8') as f_read:
+                        for line in f_read:
+                            try:
+                                entry = json.loads(line)
+                                if "query_id" in entry:
+                                    existing_query_ids.add(entry["query_id"])
+                            except json.JSONDecodeError:
+                                print(f"Warning: Could not decode JSON line in {output_filepath}: {line.strip()}")
+                                continue
+                
+                print(f"Found {len(existing_query_ids)} previously generated documents in '{output_filepath}'.")
+        
+                with open(output_filepath, 'a', encoding='utf-8') as f_write:
+                    for i, query in tqdm(enumerate(sentences), desc='Processing queries (generate or skip)'):
+                        current_query_id = queries_ids[i]
+                        if current_query_id in existing_query_ids:
+                            continue
+                        prompts = self.promptor.get_prompt(query, rel_docs[i])
+                        ans1 = self.generate(prompts[0])
+                        ans2 = self.generate(prompts[1])
+                        ans3 = self.generate(prompts[2])
+                        entry = {
+                            "query_id": current_query_id,
+                            "query": query,
+                            "generated_document": ans1,
+                            "generated_query": ans2,
+                            "generated_answer": ans3
+                        }
+                        f_write.write(json.dumps(entry, ensure_ascii=False) + '\n')
+            print(f"Document generation complete. Results saved in: {output_filepath}")
+
+    def get_datos_fire_per_model(self, path_doc_gen, model ):
+        datos_por_vector = {}
+        datos = []
+        with open(path_doc_gen+f'{model}/generated_documents_{self.dataset_name}.jsonl', 'r', encoding='utf-8') as f:
+            for linea in f:
+                datos.append(json.loads(linea.strip()))
+            datos_por_vector[model]=datos
+        return datos_por_vector
+    
+    def get_results_by_model_fire(self, pseudo_doc ,path_doc_gen, path,batch_size=32, top_k=10, top_k_final=10):
+        os.makedirs(path, exist_ok=True)
+        datos_por_vector = self.get_datos_fire_per_model(path_doc_gen, 'bge_large')
+        collection_name= f"kdir_{self.dataset_name}"
+        for model in datos_por_vector:
+            sentences_doc = []
+            queries_ids = []
+            for doc in datos_por_vector[model]:
+                sentences_doc.append(doc[pseudo_doc][0])
+                queries_ids.append(doc['query_id'])
+            embeddings_doc = get_query_embeddings_by_model(self.encoder_models,model, sentences_doc ,128,True)
+            results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
+            with open(path+f"results_{model}.json", "w") as f:
+                    json.dump(results_doc, f, indent=2)
 
 
     
