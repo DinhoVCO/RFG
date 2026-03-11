@@ -21,9 +21,9 @@ def count_output_tokens(ruta_archivo, doc_name='generated_document', model_name=
     try:
         tokenizer = MistralTokenizer.from_model(model_name)
     except Exception as e:
-        print(f"Error al cargar el tokenizador: {e}")
+        print(f"Error loading tokenizer: {e}")
         return
-    print(f"Procesando archivo: {ruta_archivo} con el tokenizador de {model_name}\n")
+    print(f"Processing file: {ruta_archivo} with the tokenizer of {model_name}\n")
     docs = []
     with open(ruta_archivo, 'r', encoding='utf-8') as f:
         for i, linea in enumerate(f):
@@ -37,11 +37,11 @@ def count_output_tokens(ruta_archivo, doc_name='generated_document', model_name=
                     len_docs+=tokens_documento
                 docs.append(len_docs)
             except json.JSONDecodeError:
-                print(f"Advertencia: La línea {i + 1} no es un JSON válido y será omitida.")
+                print(f"Warning: Line {i + 1} is not a valid JSON and will be omitted.")
             except Exception as e:
-                print(f"Error procesando la línea {i + 1}: {e}")
+                print(f"Error processing line {i + 1}: {e}")
 
-    print("\n--- Proceso completado ---")
+    print("\n--- Process completed ---")
     return {"gen_docs":docs}
 
 
@@ -107,7 +107,7 @@ def get_all_output_tokens(path_save):
     with open(path_save+'aoutput_tokens.json', 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
 
-    print(f"✅ Resultados guardados exitosamente en: {path_save}")
+    print(f"✅ Results successfully saved in: {path_save}")
 
 
 
@@ -209,7 +209,7 @@ def get_all_input_tokens(path_save):
     with open(path_save+'input_tokens.json', 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
 
-    print(f"✅ Resultados guardados exitosamente en: {path_save}")
+    print(f"✅ Results successfully saved in: {path_save}")
 
 
 
@@ -255,5 +255,5 @@ def get_input_prompt_fire_bge(dataset_name, path_save):
     with open(path_save+'input_prompt.json', 'w', encoding='utf-8') as f:
         json.dump(results_bge_fire, f, indent=4, ensure_ascii=False)
 
-    print(f"✅ Resultados guardados exitosamente en: {path_save}")
+    print(f"✅ Results successfully saved in: {path_save}")
     
