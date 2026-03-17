@@ -30,3 +30,24 @@ def evaluate_all_results(results_path):
             with open(output_file_path, 'w', encoding='utf-8') as f:
                 json.dump(metrics, f, ensure_ascii=False, indent=4)
             print(f"  Metrics saved in: {output_file_path}")
+
+def evaluate_all_results_v2(path_save_metrics,results_path):
+    normalized_path = results_path.rstrip(os.sep)
+    parts = [p for p in normalized_path.split(os.sep) if p]
+    experiment = parts[-2]
+    dataset = parts[-1]
+    print(dataset)
+    corpus, queries, qrels = get_beir_dataset(dataset)
+    output_base_dir = os.path.join("..", "metrics",path_save_metrics, experiment, dataset)
+    os.makedirs(output_base_dir, exist_ok=True)
+    for filename in os.listdir(normalized_path):
+        file_path = os.path.join(normalized_path, filename)
+        if os.path.isfile(file_path) and filename.endswith(".json"):
+            print(f"Calculating metrics for {filename}")
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            metrics = evaluate_results(qrels, data)
+            output_file_path = os.path.join(output_base_dir, filename)
+            with open(output_file_path, 'w', encoding='utf-8') as f:
+                json.dump(metrics, f, ensure_ascii=False, indent=4)
+            print(f"  Metrics saved in: {output_file_path}")

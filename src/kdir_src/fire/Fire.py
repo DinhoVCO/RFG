@@ -19,18 +19,24 @@ class Fire:
     def prompt(self, query):
         return self.promptor.build_prompt(query)
 
-    def generate(self, prompt, max_retries=5, retry_delay_seconds=1):
+    def _is_rate_limit_error(self, e: Exception) -> bool:
+        """Detecta si el error es por rate limit (429)."""
+        err_str = str(e).lower()
+        return "429" in err_str or "rate_limit" in err_str or "rate_limited" in err_str
+
+    def generate(self, prompt, max_retries=5, retry_delay_seconds=1, rate_limit_delay_seconds=60):
         for attempt in range(max_retries):
             try:
                 hypothesis_documents = self.generator.generate(prompt) 
                 return hypothesis_documents
             except Exception as e: 
-                print(f"Error generating for query '{prompt}' (Attempt {attempt + 1}/{max_retries}): {e}")
+                print(f"Error generating for query '' (Attempt {attempt + 1}/{max_retries}): {e}")
                 if attempt < max_retries - 1:
-                    print(f"Retrying in {retry_delay_seconds} seconds...")
-                    time.sleep(retry_delay_seconds)
+                    delay = rate_limit_delay_seconds if self._is_rate_limit_error(e) else retry_delay_seconds
+                    print(f"Retrying in {delay} seconds...")
+                    time.sleep(delay)
                 else:
-                    print(f"Max retries reached for query '{prompt}'. Giving up.")
+                    print(f"Max retries reached for query ''. Giving up.")
                     raise
 
     def get_rel_docs_by_model(self, model_embeddings, collection_name, vector_name, top_k=5):
@@ -172,7 +178,7 @@ class Fire:
             results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
             results_answer = get_inference_results(embeddings_answer, queries_ids, collection_name, model, top_k)
             results = self.rrf_doc_answer_query_results(queries_ids, results_query,results_doc, results_answer)             
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results, f, indent=2)
             
             
@@ -203,7 +209,7 @@ class Fire:
             results_new_query = get_inference_results(embeddings_new_query, queries_ids, collection_name, model, top_k)
             results_answer = get_inference_results(embeddings_answer, queries_ids, collection_name, model, top_k)
             results = self.rrf_all_results(queries_ids, results_query,results_doc, results_new_query, results_answer)             
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results, f, indent=2)
                 
     def get_doc_answer_results_rrf_from_jsonl_fire(self, path_doc_gen, path='../results/fire/doc5/',batch_size=32, top_k=10, top_k_final=10):
@@ -225,7 +231,7 @@ class Fire:
             results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
             results_answer = get_inference_results(embeddings_answer, queries_ids, collection_name, model, top_k)
             results = self.rrf_doc_answer_results(queries_ids,results_doc, results_answer)             
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results, f, indent=2)
                 
     def get_o_query_doc__results_rrf_from_jsonl_fire(self, path_doc_gen, path='../results/fire/doc5/',batch_size=32, top_k=10, top_k_final=10):
@@ -247,7 +253,7 @@ class Fire:
             results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
             results_answer = get_inference_results(embeddings_answer, queries_ids, collection_name, model, top_k)
             results = self.rrf_doc_answer_results(queries_ids,results_doc, results_answer)             
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results, f, indent=2)
 
     def get_o_query_answer_results_rrf_from_jsonl_fire(self, path_doc_gen, path='../results/fire/doc5/',batch_size=32, top_k=10, top_k_final=10):
@@ -269,7 +275,7 @@ class Fire:
             results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
             results_answer = get_inference_results(embeddings_answer, queries_ids, collection_name, model, top_k)
             results = self.rrf_doc_answer_results(queries_ids,results_doc, results_answer)             
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results, f, indent=2)
 
 
@@ -285,7 +291,7 @@ class Fire:
                 queries_ids.append(doc['query_id'])
             embeddings_doc = get_query_embeddings_by_model(self.encoder_models,model, sentences_doc ,128,True)
             results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results_doc, f, indent=2)
 
 
@@ -344,7 +350,7 @@ class Fire:
                 f_write.write(json.dumps(entry, ensure_ascii=False) + '\n')
         print(f"Document generation complete. Results saved in: {output_filepath}")
 
-    def generate_and_save_prf_bge_large(self, path='../doc_gen/fire/', batch_size=32, top_k=5):
+    def generate_and_save_prf_bge_large(self, path='../doc_gen/fire/', batch_size=32, top_k=5, max_retries=5, retry_delay_seconds=1, rate_limit_delay_seconds=60):
         vectors =["contriever","contriever_ft","dpr","bge_large","gte_large","sparse_bm25"]
         sentences, queries_ids, all_rel_docs = self.get_all_rel_docs(batch_size, top_k)
         for j, rel_docs in enumerate(all_rel_docs):
@@ -371,9 +377,9 @@ class Fire:
                         if current_query_id in existing_query_ids:
                             continue
                         prompts = self.promptor.get_prompt(query, rel_docs[i])
-                        ans1 = self.generate(prompts[0])
-                        ans2 = self.generate(prompts[1])
-                        ans3 = self.generate(prompts[2])
+                        ans1 = self.generate(prompts[0], max_retries=max_retries, retry_delay_seconds=retry_delay_seconds, rate_limit_delay_seconds=rate_limit_delay_seconds)
+                        ans2 = self.generate(prompts[1], max_retries=max_retries, retry_delay_seconds=retry_delay_seconds, rate_limit_delay_seconds=rate_limit_delay_seconds)
+                        ans3 = self.generate(prompts[2], max_retries=max_retries, retry_delay_seconds=retry_delay_seconds, rate_limit_delay_seconds=rate_limit_delay_seconds)
                         entry = {
                             "query_id": current_query_id,
                             "query": query,
@@ -405,8 +411,34 @@ class Fire:
                 queries_ids.append(doc['query_id'])
             embeddings_doc = get_query_embeddings_by_model(self.encoder_models,model, sentences_doc ,128,True)
             results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
-            with open(path+f"results_{model}.json", "w") as f:
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
                     json.dump(results_doc, f, indent=2)
+    
+    def get_3best_results_rrf_from_jsonl_fire_v2(self, path_doc_gen, path='../results/fire/doc5/',batch_size=32, top_k=10, top_k_final=10):
+        os.makedirs(path, exist_ok=True)
+        datos_por_vector = self.get_datos_fire_per_model(path_doc_gen, 'bge_large')
+        collection_name= f"kdir_{self.dataset_name}"
+        for model in datos_por_vector:
+            query_list=[]
+            sentences_doc = []
+            sentences_answer = []
+            queries_ids = []
+            for doc in datos_por_vector[model]:
+                query_list.append(doc['query'])
+                sentences_doc.append(doc['generated_document'][0])
+                sentences_answer.append(doc['generated_answer'][0])
+                queries_ids.append(doc['query_id'])
+
+            embeddings_query_list = get_query_embeddings_by_model(self.encoder_models,model, query_list ,128,True)
+            embeddings_doc = get_query_embeddings_by_model(self.encoder_models,model, sentences_doc ,128,True)
+            embeddings_answer = get_query_embeddings_by_model(self.encoder_models,model, sentences_answer ,128,True)
+            
+            results_query = get_inference_results(embeddings_query_list, queries_ids, collection_name, model, top_k)
+            results_doc = get_inference_results(embeddings_doc, queries_ids, collection_name, model, top_k)
+            results_answer = get_inference_results(embeddings_answer, queries_ids, collection_name, model, top_k)
+            results = self.rrf_doc_answer_query_results(queries_ids, results_query,results_doc, results_answer)             
+            with open(os.path.join(path, f"results_{model}.json"), "w") as f:
+                    json.dump(results, f, indent=2)
 
 
     
