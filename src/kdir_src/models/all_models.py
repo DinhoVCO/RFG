@@ -53,13 +53,13 @@ def get_docs_embeddings(models, sentences, batch_size=32):
     #embeddings.append(qwen3_06B_embeddings)
     gte_large_embeddings = get_gte_embeddings(models['gte_large'][0], sentences, batch_size)
     embeddings.append(gte_large_embeddings)
-    print("Procesando BM25 embeddings")
+    print("Processing BM25 embeddings")
     bm25_embeddings = get_sparse_embeddings(models['bm25'], sentences, 128)
     embeddings.append(bm25_embeddings)
     #print("Procesando SPLADE embeddings")
     #splade_embeddings = get_sparse_embeddings(models['splade'], sentences, 128)
     #embeddings.append(splade_embeddings)
-    print("Embeddings finalizado")
+    print("Embeddings processed")
     return embeddings
 
 def get_and_save_docs_embeddings(dataset_name, models, model_name,path_save, sentences, batch_size=32):
@@ -75,7 +75,7 @@ def get_and_save_docs_embeddings(dataset_name, models, model_name,path_save, sen
         embeddings = get_gte_embeddings(models['gte_large'][0], sentences, batch_size)
     elif(model_name=='bm25'):
         embeddings = get_sparse_embeddings(models['bm25'], sentences, 128)
-    print("Embeddings finalizado")
+    print("Embeddings processed")
     os.makedirs(path_save, exist_ok=True) 
     # --- Fin de la adición ---
 
@@ -83,7 +83,7 @@ def get_and_save_docs_embeddings(dataset_name, models, model_name,path_save, sen
     full_output_path = os.path.join(path_save, output_file_name) # Usar os.path.join es más robusto
 
     torch.save(embeddings, full_output_path)
-    print(f"Embeddings guardados en: {full_output_path}")
+    print(f"Embeddings saved in: {full_output_path}")
 
 
 def get_query_embeddings_by_model(models, model, sentences, batch_size=32, show_progress_bar=True):
@@ -104,7 +104,7 @@ def get_query_embeddings_by_model(models, model, sentences, batch_size=32, show_
         return gte_large_embeddings
     elif(model=='sparse_bm25'): 
         if(show_progress_bar):
-            print("Procesando BM25 embeddings")
+            print("Processing BM25 embeddings")
         bm25_embeddings = get_sparse_embeddings(models['bm25'], sentences, 128)
         return bm25_embeddings
 
@@ -124,12 +124,12 @@ def get_query_embeddings(models, sentences, batch_size=32, show_progress_bar=Tru
     gte_large_embeddings = get_gte_embeddings(models['gte_large'][0], sentences, batch_size, show_progress_bar)
     embeddings.append(gte_large_embeddings)
     if(show_progress_bar):
-        print("Procesando BM25 embeddings")
+        print("Processing BM25 embeddings")
     bm25_embeddings = get_sparse_embeddings(models['bm25'], sentences, 128)
     embeddings.append(bm25_embeddings)
     #print("Procesando SPLADE embeddings")
     #splade_embeddings = get_sparse_embeddings(models['splade'], sentences, 128)
     #embeddings.append(splade_embeddings)
     if(show_progress_bar):
-        print("Embeddings finalizado")
+        print("Embeddings processed")
     return embeddings

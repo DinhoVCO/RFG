@@ -77,14 +77,14 @@ If you use this work, please cite the paper as follows:
 ## 📂 Resources
 
 - 📑 [Paper PDF](./KDIR_2025_Ronaldinho.pdf)  
-- 💻 Source code: [GitHub Repository](https://github.com/xxxx/xxxxxx) *(coming soon)*  
+- 💻 Source code: [GitHub Repository](https://github.com/DinhoVCO/RFG)
 
 ---
 
 ## 📝 License
 
-This academic work is distributed under a **non-commercial use license**.  
-Please refer to the conference publication policy for details.
+This project is licensed under the **MIT License** and is free to use, modify, and distribute for both commercial and non-commercial purposes.  
+See the [LICENSE](./LICENSE) file for full details.
 
 
 ## 🚀 Quick Start
@@ -95,13 +95,47 @@ Follow these steps to set up the environment and run experiments with **HyDE**, 
 
 ### 1. Installation
 
+You can set up the environment with either a standard Python virtual environment or using [uv](https://github.com/astral-sh/uv), which is recommended if you have a `pyproject.toml` file.
+
+#### Option 1: Using `.venv`
+
 ```bash
+# Create a virtual environment
+python -m venv .venv
+
+# Activate the virtual environment
+# On Unix/macOS:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
 # Install the project in editable mode
 pip install -e .
 ```
+
+#### Option 2: Using uv (recommended if you have pyproject.toml)
+
+```bash
+# Install uv if you don't have it already
+pip install uv
+
+# Initialize uv (this generates uv.lock, if not already present)
+uv init
+
+# On Unix/macOS:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+
+# Install all dependencies from pyproject.toml 
+uv sync
+
+```
+
+
 
 ---
 

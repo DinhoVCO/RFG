@@ -49,7 +49,6 @@ htmlcov/
 # Archivos de configuración específicos
 *.ini
 *.cfg
-*.toml
 
 # Archivos de lock
 poetry.lock

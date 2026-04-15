@@ -10,7 +10,7 @@ client = QdrantClient(url="http://localhost:6333")
 
 def get_points(all_embeddings,payloads):
     points = []
-    for i, payload in tqdm(enumerate(payloads), desc= "creando points"):
+    for i, payload in tqdm(enumerate(payloads), desc= "creating points"):
         points.append(
             PointStruct(
                 id=int(i), 
@@ -32,7 +32,7 @@ def get_points(all_embeddings,payloads):
 
 def create_collection(client, collection_name, DIM_CONTRIEVER, DIM_CONTRIEVER_FT, DIM_DPR, DIM_BGE_L, DIM_GTE_L):
     if client.collection_exists(collection_name=collection_name):
-        print(f"La colección '{collection_name}' ya existe.")
+        print(f"The collection '{collection_name}' already exists.")
         client.delete_collection(collection_name=collection_name)
     
     client.create_collection(
@@ -51,7 +51,7 @@ def create_collection(client, collection_name, DIM_CONTRIEVER, DIM_CONTRIEVER_FT
 
 def insert_documents(collection_name, points, batch_size=100):
     total_batches = math.ceil(len(points) / batch_size)
-    for i in tqdm(range(total_batches), desc="Insertando documentos en lotes"):
+    for i in tqdm(range(total_batches), desc="Inserting documents in batches"):
         batch = points[i * batch_size : (i + 1) * batch_size]
         client.upsert(collection_name=collection_name, points=batch)
 
@@ -75,7 +75,7 @@ def process_corpus(dataset_name, bz_emb= 32, bz_qdrant = 100):
     collection_name= f"kdir_{dataset_name}"
     create_collection(client, collection_name,  DIM_CONTRIEVER, DIM_CONTRIEVER_FT, DIM_DPR, DIM_BGE_L, DIM_GTE_L)
     insert_documents(collection_name, points, batch_size=bz_qdrant)
-    print("Coleccion creada")
+    print("Collection created")
 
 def recuperar_documentos(collection_name, query_embeddings, vector_name, top_k=10):
     search_result = client.query_points(

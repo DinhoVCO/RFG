@@ -255,7 +255,7 @@ class HyDE:
         bge_large=[]
         gte_large=[]
         sparse_bm25=[]
-        for query in tqdm(sentences, desc='obteniendo embedding de todas las querys'):
+        for query in tqdm(sentences, desc='getting embeddings of all queries'):
             hypothesis_documents = self.generate(query)
             hyde_vector = self.encode(query, hypothesis_documents)
             contriever.append(hyde_vector[0])
@@ -275,7 +275,7 @@ class HyDE:
         bge_large=[]
         gte_large=[]
         sparse_bm25=[]       
-        for doc in tqdm(datos, desc='obteniendo embedding de todos los doc generados'):
+        for doc in tqdm(datos, desc='getting embeddings of all generated docs'):
             queries_ids.append(doc['query_id'])
             hypothesis_documents = doc['generated_documents']
             hyde_vector = self.encode(doc['query'], hypothesis_documents)

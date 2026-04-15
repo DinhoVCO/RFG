@@ -108,7 +108,7 @@ class RAG_fusion:
         bge_large=[]
         gte_large=[]
         sparse_bm25=[]       
-        for doc in tqdm(datos, desc='obteniendo embedding de todos los doc generados'):
+        for doc in tqdm(datos, desc='getting embeddings of all generated docs'):
             queries_ids.append(doc['query_id'])
             hypothesis_documents = doc['generated_documents']
             hyde_vector = self.encode(hypothesis_documents)
